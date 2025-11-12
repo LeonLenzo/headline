@@ -482,6 +482,15 @@
 
         // Initialize
         initializeNames();
+
+        // Prompt for token if not set
+        if (!localStorage.getItem('github_token')) {
+            const token = prompt('Welcome! Enter your GitHub token to sync headlines:');
+            if (token) {
+                localStorage.setItem('github_token', token);
+            }
+        }
+
         loadRandomHeadline();
     </script>
 </body>
