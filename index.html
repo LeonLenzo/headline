@@ -337,40 +337,95 @@
             document.getElementById('person2Name').textContent = PERSON2_NAME;
         }
 
-        // Load historical data and merge with localStorage
-        async function loadHistoricalData() {
-            try {
-                const response = await fetch('headlines-data.json');
-                const historicalData = await response.json();
+        // GitHub Gist configuration
+        const GIST_ID = 'e2ff6236ffc87c79fc1f9790b9d404cd';
+        const GIST_FILENAME = 'headlines-data.json';
 
-                // Get existing data from localStorage
-                const existingData = localStorage.getItem('dailyHeadlines');
-                const localData = existingData ? JSON.parse(existingData) : [];
-
-                // Only import if localStorage is empty or has fewer items
-                if (localData.length === 0) {
-                    localStorage.setItem('dailyHeadlines', JSON.stringify(historicalData));
-                    updateStats();
+        // Get or prompt for GitHub token
+        function getToken() {
+            let token = localStorage.getItem('github_token');
+            if (!token) {
+                token = prompt('Enter GitHub token (one-time setup):');
+                if (token) {
+                    localStorage.setItem('github_token', token);
                 }
+            }
+            return token;
+        }
+
+        // Load data from Gist
+        async function loadFromGist() {
+            try {
+                const response = await fetch(`https://api.github.com/gists/${GIST_ID}`);
+                const gist = await response.json();
+                const content = gist.files[GIST_FILENAME].content;
+                return JSON.parse(content);
             } catch (error) {
-                console.log('No historical data file found, starting fresh');
+                console.error('Failed to load from Gist:', error);
+                return [];
             }
         }
 
-        // Load saved headlines from localStorage
-        function getHeadlines() {
-            const headlines = localStorage.getItem('dailyHeadlines');
-            return headlines ? JSON.parse(headlines) : [];
+        // Save data to Gist
+        async function saveToGist(headlines) {
+            const token = getToken();
+            if (!token) {
+                return false;
+            }
+
+            try {
+                const response = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        files: {
+                            [GIST_FILENAME]: {
+                                content: JSON.stringify(headlines, null, 2)
+                            }
+                        }
+                    })
+                });
+
+                if (response.ok) {
+                    return true;
+                } else {
+                    console.error('Failed to save to Gist:', await response.text());
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error saving to Gist:', error);
+                return false;
+            }
         }
 
-        // Save headlines to localStorage
-        function saveHeadlinesData(headlines) {
-            localStorage.setItem('dailyHeadlines', JSON.stringify(headlines));
+        // Load saved headlines from Gist
+        let cachedHeadlines = null;
+        async function getHeadlines() {
+            if (!cachedHeadlines) {
+                cachedHeadlines = await loadFromGist();
+            }
+            return cachedHeadlines;
+        }
+
+        // Save headlines to Gist
+        async function saveHeadlinesData(headlines) {
+            cachedHeadlines = headlines;
+            const success = await saveToGist(headlines);
+
+            if (success) {
+                showMessage('Saved to cloud! ☁️', 'success');
+            } else {
+                showMessage('Saved locally, but cloud sync failed', 'error');
+            }
+
             updateStats();
         }
 
         // Save a new headline
-        function saveHeadline(person) {
+        async function saveHeadline(person) {
             const personName = person === 'person1' ? PERSON1_NAME : PERSON2_NAME;
             const date = document.getElementById('date').value;
             const headlineInput = person === 'person1' ? 'headline1' : 'headline2';
@@ -381,7 +436,7 @@
                 return;
             }
 
-            const headlines = getHeadlines();
+            const headlines = await getHeadlines();
             headlines.push({
                 person: personName,
                 date: date,
@@ -393,13 +448,11 @@
 
             // Clear the headline input
             document.getElementById(headlineInput).value = '';
-
-            showMessage(`${personName}'s headline saved! 🎉`, 'success');
         }
 
         // Show a random headline
-        function showRandomHeadline() {
-            const headlines = getHeadlines();
+        async function showRandomHeadline() {
+            const headlines = await getHeadlines();
 
             if (headlines.length === 0) {
                 showMessage('No headlines yet! Add some first.', 'error');
@@ -434,8 +487,8 @@
         }
 
         // Update stats
-        function updateStats() {
-            const headlines = getHeadlines();
+        async function updateStats() {
+            const headlines = await getHeadlines();
             document.getElementById('stats').textContent =
                 `Total headlines: ${headlines.length}`;
         }
@@ -455,7 +508,6 @@
 
         // Initialize
         initializeNames();
-        loadHistoricalData();
         updateStats();
     </script>
 </body>
