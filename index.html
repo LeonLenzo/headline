@@ -195,17 +195,12 @@
         }
 
         .random-headline {
-            margin-top: 30px;
+            margin-bottom: 30px;
             padding: 20px;
             background: #f0f5f1;
             border-radius: 12px;
             border-left: 4px solid #6B8E70;
-            display: none;
-        }
-
-        .random-headline.show {
             display: block;
-            animation: fadeIn 0.5s;
         }
 
         @keyframes fadeIn {
@@ -219,16 +214,12 @@
             }
         }
 
-        .random-headline h3 {
-            color: #2D5F3F;
-            margin-bottom: 10px;
-        }
-
         .headline-text {
-            color: #333;
-            font-size: 1.1em;
+            color: #2D5F3F;
+            font-size: 1.2em;
             margin-bottom: 8px;
-            font-style: italic;
+            font-weight: 600;
+            text-transform: capitalize;
         }
 
         .headline-meta {
@@ -280,8 +271,10 @@
 </head>
 <body>
     <div class="container">
-        <h1>📰 Daily Headlines</h1>
-        <p class="subtitle">What's the headline of your day?</p>
+        <div id="randomHeadline" class="random-headline">
+            <div class="headline-text" id="randomText"></div>
+            <div class="headline-meta" id="randomMeta"></div>
+        </div>
 
         <div class="input-group">
             <label for="date">Date:</label>
@@ -306,21 +299,7 @@
             </div>
         </div>
 
-        <div class="button-group">
-            <button class="btn-random" onclick="showRandomHeadline()">Random Memory</button>
-        </div>
-
         <div id="message" class="message"></div>
-
-        <div id="randomHeadline" class="random-headline">
-            <h3>Memory Lane</h3>
-            <div class="headline-text" id="randomText"></div>
-            <div class="headline-meta" id="randomMeta"></div>
-        </div>
-
-        <div class="stats" id="stats">
-            Total headlines: 0
-        </div>
     </div>
 
     <script>
@@ -462,7 +441,7 @@
             const randomIndex = Math.floor(Math.random() * headlines.length);
             const random = headlines[randomIndex];
 
-            document.getElementById('randomText').textContent = `"${random.headline}"`;
+            document.getElementById('randomText').textContent = random.headline;
             document.getElementById('randomMeta').textContent =
                 `${random.person} • ${new Date(random.date).toLocaleDateString('en-US', {
                     weekday: 'long',
@@ -470,9 +449,6 @@
                     month: 'long',
                     day: 'numeric'
                 })}`;
-
-            const randomDiv = document.getElementById('randomHeadline');
-            randomDiv.classList.add('show');
         }
 
         // Show message
@@ -486,11 +462,9 @@
             }, 3000);
         }
 
-        // Update stats
-        async function updateStats() {
-            const headlines = await getHeadlines();
-            document.getElementById('stats').textContent =
-                `Total headlines: ${headlines.length}`;
+        // Show random headline on load
+        async function loadRandomHeadline() {
+            await showRandomHeadline();
         }
 
         // Allow Enter key to save
@@ -508,7 +482,7 @@
 
         // Initialize
         initializeNames();
-        updateStats();
+        loadRandomHeadline();
     </script>
 </body>
 </html>
