@@ -310,11 +310,6 @@
             <div class="headline-meta" id="randomMeta"></div>
         </div>
 
-        <div class="input-group">
-            <label for="date">Date:</label>
-            <input type="date" id="date">
-        </div>
-
         <div class="headline-boxes">
             <div class="headline-box">
                 <h2 id="person1Name">Person 1</h2>
@@ -337,8 +332,11 @@
     </div>
 
     <script>
-        // Set today's date by default
-        document.getElementById('date').valueAsDate = new Date();
+        // Get today's date in YYYY-MM-DD format
+        function getTodayDate() {
+            const today = new Date();
+            return today.toISOString().split('T')[0];
+        }
 
         // Hardcoded names
         const PERSON1_NAME = 'Leon';
@@ -440,22 +438,33 @@
         // Save a new headline
         async function saveHeadline(person) {
             const personName = person === 'person1' ? PERSON1_NAME : PERSON2_NAME;
-            const date = document.getElementById('date').value;
+            const date = getTodayDate();
             const headlineInput = person === 'person1' ? 'headline1' : 'headline2';
             const headline = document.getElementById(headlineInput).value.trim();
 
-            if (!date || !headline) {
+            if (!headline) {
                 showMessage('Please enter a headline!', 'error');
                 return;
             }
 
             const headlines = await getHeadlines();
-            headlines.push({
-                person: personName,
-                date: date,
-                headline: headline,
-                timestamp: new Date().toISOString()
-            });
+
+            // Check if headline already exists for this person today
+            const existingIndex = headlines.findIndex(h => h.person === personName && h.date === date);
+
+            if (existingIndex !== -1) {
+                // Update existing headline
+                headlines[existingIndex].headline = headline;
+                headlines[existingIndex].timestamp = new Date().toISOString();
+            } else {
+                // Add new headline
+                headlines.push({
+                    person: personName,
+                    date: date,
+                    headline: headline,
+                    timestamp: new Date().toISOString()
+                });
+            }
 
             saveHeadlinesData(headlines);
 
@@ -501,24 +510,20 @@
             await showRandomHeadline();
         }
 
-        // Load headlines for selected date
-        async function loadHeadlinesForDate(date) {
+        // Load today's headlines if they exist
+        async function loadTodaysHeadlines() {
             const headlines = await getHeadlines();
-            const dateHeadlines = headlines.filter(h => h.date === date);
+            const today = getTodayDate();
+            const todaysHeadlines = headlines.filter(h => h.date === today);
 
             // Find headlines for each person
-            const person1Headline = dateHeadlines.find(h => h.person === PERSON1_NAME);
-            const person2Headline = dateHeadlines.find(h => h.person === PERSON2_NAME);
+            const person1Headline = todaysHeadlines.find(h => h.person === PERSON1_NAME);
+            const person2Headline = todaysHeadlines.find(h => h.person === PERSON2_NAME);
 
-            // Populate the input fields
+            // Populate the input fields if headlines exist for today
             document.getElementById('headline1').value = person1Headline ? person1Headline.headline : '';
             document.getElementById('headline2').value = person2Headline ? person2Headline.headline : '';
         }
-
-        // Listen for date changes
-        document.getElementById('date').addEventListener('change', function(e) {
-            loadHeadlinesForDate(e.target.value);
-        });
 
         // Allow Enter key to save
         document.getElementById('headline1').addEventListener('keypress', function(e) {
@@ -545,6 +550,7 @@
         }
 
         loadRandomHeadline();
+        loadTodaysHeadlines();
     </script>
 </body>
 </html>
