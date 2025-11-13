@@ -324,6 +324,8 @@
             </div>
         </div>
 
+        <button class="btn-random" onclick="checkAndGenerateImage()" style="width: 100%; margin-bottom: 20px;">Test Generate Image</button>
+
         <div id="message" class="message"></div>
     </div>
 
@@ -337,6 +339,166 @@
         // Hardcoded names
         const PERSON1_NAME = 'Leon';
         const PERSON2_NAME = 'Caitlin';
+
+        // Newspaper templates
+        const NEWSPAPER_TEMPLATES = [
+            {
+                name: 'Classic Times',
+                font: 'serif',
+                backgroundColor: '#f5f1e8',
+                headlineColor: '#1a1a1a',
+                borderStyle: '3px solid #8b7355'
+            },
+            {
+                name: 'Modern Post',
+                font: 'sans-serif',
+                backgroundColor: '#ffffff',
+                headlineColor: '#000000',
+                borderStyle: '2px solid #000000'
+            },
+            {
+                name: 'Vintage Daily',
+                font: 'serif',
+                backgroundColor: '#faf8f3',
+                headlineColor: '#2d2d2d',
+                borderStyle: '4px double #654321'
+            },
+            {
+                name: 'Bold Gazette',
+                font: 'sans-serif',
+                backgroundColor: '#fff9e6',
+                headlineColor: '#8b0000',
+                borderStyle: '3px solid #8b0000'
+            },
+            {
+                name: 'Evening Chronicle',
+                font: 'serif',
+                backgroundColor: '#f0ebe1',
+                headlineColor: '#1c3d5a',
+                borderStyle: '2px solid #1c3d5a'
+            }
+        ];
+
+        // Generate newspaper image
+        async function generateNewspaperImage(headline1, headline2, personName1, personName2) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1200;
+            canvas.height = 800;
+            const ctx = canvas.getContext('2d');
+
+            // Pick random template
+            const template = NEWSPAPER_TEMPLATES[Math.floor(Math.random() * NEWSPAPER_TEMPLATES.length)];
+
+            // Background
+            ctx.fillStyle = template.backgroundColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Border
+            ctx.strokeStyle = template.borderStyle.split(' ')[2];
+            ctx.lineWidth = parseInt(template.borderStyle);
+            ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+
+            // Newspaper name
+            ctx.fillStyle = template.headlineColor;
+            ctx.font = `bold 48px ${template.font}`;
+            ctx.textAlign = 'center';
+            ctx.fillText(template.name.toUpperCase(), canvas.width / 2, 100);
+
+            // Date
+            const today = new Date();
+            const dateStr = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            ctx.font = `20px ${template.font}`;
+            ctx.fillText(dateStr, canvas.width / 2, 140);
+
+            // Separator line
+            ctx.beginPath();
+            ctx.moveTo(100, 170);
+            ctx.lineTo(canvas.width - 100, 170);
+            ctx.stroke();
+
+            // Headlines
+            ctx.font = `bold 36px ${template.font}`;
+            ctx.textAlign = 'left';
+
+            // Person 1 headline
+            ctx.fillText(personName1 + ':', 100, 250);
+            wrapText(ctx, headline1, 100, 300, canvas.width - 200, 45);
+
+            // Person 2 headline
+            ctx.fillText(personName2 + ':', 100, 500);
+            wrapText(ctx, headline2, 100, 550, canvas.width - 200, 45);
+
+            // Convert to blob and download
+            canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `headline-${getTodayDate()}.png`;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+
+        // Helper function to wrap text
+        function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+            const words = text.split(' ');
+            let line = '';
+            let yPos = y;
+
+            for (let i = 0; i < words.length; i++) {
+                const testLine = line + words[i] + ' ';
+                const metrics = ctx.measureText(testLine);
+                const testWidth = metrics.width;
+
+                if (testWidth > maxWidth && i > 0) {
+                    ctx.fillText(line, x, yPos);
+                    line = words[i] + ' ';
+                    yPos += lineHeight;
+                } else {
+                    line = testLine;
+                }
+            }
+            ctx.fillText(line, x, yPos);
+        }
+
+        // Check and generate image at 23:59
+        async function checkAndGenerateImage() {
+            const headlines = await getHeadlines();
+            const today = getTodayDate();
+            const todaysHeadlines = headlines.filter(h => h.date === today);
+
+            const person1Headline = todaysHeadlines.find(h => h.person === PERSON1_NAME);
+            const person2Headline = todaysHeadlines.find(h => h.person === PERSON2_NAME);
+
+            if (person1Headline && person2Headline) {
+                generateNewspaperImage(
+                    person1Headline.headline,
+                    person2Headline.headline,
+                    PERSON1_NAME,
+                    PERSON2_NAME
+                );
+            }
+        }
+
+        // Schedule daily image generation at 23:59
+        function scheduleDailyGeneration() {
+            const now = new Date();
+            const target = new Date();
+            target.setHours(23, 59, 0, 0);
+
+            // If we've passed 23:59 today, schedule for tomorrow
+            if (now > target) {
+                target.setDate(target.getDate() + 1);
+            }
+
+            const timeUntilTarget = target - now;
+
+            setTimeout(() => {
+                checkAndGenerateImage();
+                // Reschedule for next day
+                setInterval(checkAndGenerateImage, 24 * 60 * 60 * 1000);
+            }, timeUntilTarget);
+        }
 
         // Initialize names
         function initializeNames() {
@@ -546,6 +708,7 @@
 
         loadRandomHeadline();
         loadTodaysHeadlines();
+        scheduleDailyGeneration();
     </script>
 </body>
 </html>
