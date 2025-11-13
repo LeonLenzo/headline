@@ -340,103 +340,156 @@
         const PERSON1_NAME = 'Leon';
         const PERSON2_NAME = 'Caitlin';
 
-        // Newspaper templates
-        const NEWSPAPER_TEMPLATES = [
-            {
-                name: 'Classic Times',
-                font: 'serif',
-                backgroundColor: '#f5f1e8',
-                headlineColor: '#1a1a1a',
-                borderStyle: '3px solid #8b7355'
-            },
-            {
-                name: 'Modern Post',
-                font: 'sans-serif',
-                backgroundColor: '#ffffff',
-                headlineColor: '#000000',
-                borderStyle: '2px solid #000000'
-            },
-            {
-                name: 'Vintage Daily',
-                font: 'serif',
-                backgroundColor: '#faf8f3',
-                headlineColor: '#2d2d2d',
-                borderStyle: '4px double #654321'
-            },
-            {
-                name: 'Bold Gazette',
-                font: 'sans-serif',
-                backgroundColor: '#fff9e6',
-                headlineColor: '#8b0000',
-                borderStyle: '3px solid #8b0000'
-            },
-            {
-                name: 'Evening Chronicle',
-                font: 'serif',
-                backgroundColor: '#f0ebe1',
-                headlineColor: '#1c3d5a',
-                borderStyle: '2px solid #1c3d5a'
-            }
-        ];
-
-        // Generate newspaper image
-        async function generateNewspaperImage(headline1, headline2, personName1, personName2) {
+        // Generate single newspaper image (NYT style)
+        function generateNewspaperImage(headline, personName) {
             const canvas = document.createElement('canvas');
             canvas.width = 1200;
-            canvas.height = 800;
+            canvas.height = 1600;
             const ctx = canvas.getContext('2d');
 
-            // Pick random template
-            const template = NEWSPAPER_TEMPLATES[Math.floor(Math.random() * NEWSPAPER_TEMPLATES.length)];
-
-            // Background
-            ctx.fillStyle = template.backgroundColor;
+            // Background - off-white newspaper color
+            ctx.fillStyle = '#f7f5f0';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Border
-            ctx.strokeStyle = template.borderStyle.split(' ')[2];
-            ctx.lineWidth = parseInt(template.borderStyle);
-            ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+            // Add subtle texture/noise
+            for (let i = 0; i < 2000; i++) {
+                ctx.fillStyle = `rgba(0,0,0,${Math.random() * 0.02})`;
+                ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 1, 1);
+            }
 
-            // Newspaper name
-            ctx.fillStyle = template.headlineColor;
-            ctx.font = `bold 48px ${template.font}`;
-            ctx.textAlign = 'center';
-            ctx.fillText(template.name.toUpperCase(), canvas.width / 2, 100);
-
-            // Date
             const today = new Date();
             const dateStr = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            ctx.font = `20px ${template.font}`;
-            ctx.fillText(dateStr, canvas.width / 2, 140);
 
-            // Separator line
+            // Masthead - "The Bourke St Gazette"
+            ctx.fillStyle = '#000000';
+            ctx.font = 'bold 72px Georgia, serif';
+            ctx.textAlign = 'center';
+            ctx.letterSpacing = '4px';
+
+            // Old English style with smaller Gazette
+            ctx.font = 'bold 80px Georgia, serif';
+            ctx.fillText('The Bourke St', canvas.width / 2, 120);
+            ctx.font = 'italic bold 64px Georgia, serif';
+            ctx.fillText('Gazette', canvas.width / 2, 200);
+
+            // Top border lines
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 3;
             ctx.beginPath();
-            ctx.moveTo(100, 170);
-            ctx.lineTo(canvas.width - 100, 170);
+            ctx.moveTo(100, 230);
+            ctx.lineTo(canvas.width - 100, 230);
             ctx.stroke();
 
-            // Headlines
-            ctx.font = `bold 36px ${template.font}`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(100, 238);
+            ctx.lineTo(canvas.width - 100, 238);
+            ctx.stroke();
+
+            // Date and edition info
+            ctx.font = '18px Georgia, serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(dateStr.toUpperCase(), canvas.width / 2, 275);
+
+            // Another separator
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(100, 300);
+            ctx.lineTo(canvas.width - 100, 300);
+            ctx.stroke();
+
+            // Main headline
+            ctx.font = 'bold 56px Georgia, serif';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#000000';
+
+            // Wrap headline text
+            const words = headline.split(' ');
+            let lines = [];
+            let currentLine = '';
+
+            for (let word of words) {
+                const testLine = currentLine + (currentLine ? ' ' : '') + word;
+                const metrics = ctx.measureText(testLine);
+
+                if (metrics.width > canvas.width - 250 && currentLine) {
+                    lines.push(currentLine);
+                    currentLine = word;
+                } else {
+                    currentLine = testLine;
+                }
+            }
+            if (currentLine) lines.push(currentLine);
+
+            // Draw headline centered
+            let yPos = 420;
+            for (let line of lines) {
+                ctx.fillText(line, canvas.width / 2, yPos);
+                yPos += 70;
+            }
+
+            // Byline
+            ctx.font = 'italic 24px Georgia, serif';
+            ctx.fillText(`By ${personName}`, canvas.width / 2, yPos + 60);
+
+            // Bottom border
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(100, yPos + 100);
+            ctx.lineTo(canvas.width - 100, yPos + 100);
+            ctx.stroke();
+
+            // Fake article columns (decorative lines to look like text columns)
+            ctx.font = '16px Georgia, serif';
             ctx.textAlign = 'left';
+            ctx.fillStyle = '#666666';
 
-            // Person 1 headline
-            ctx.fillText(personName1 + ':', 100, 250);
-            wrapText(ctx, headline1, 100, 300, canvas.width - 200, 45);
+            const colY = yPos + 140;
+            const colHeight = 20;
+            const colGap = 30;
 
-            // Person 2 headline
-            ctx.fillText(personName2 + ':', 100, 500);
-            wrapText(ctx, headline2, 100, 550, canvas.width - 200, 45);
+            // Draw fake article lines (looks like text columns)
+            for (let i = 0; i < 15; i++) {
+                const y = colY + (i * colGap);
+                // Left column
+                ctx.fillRect(120, y, 450, 2);
+                ctx.fillRect(120, y + 8, 420, 2);
+                ctx.fillRect(120, y + 16, 440, 2);
 
-            // Convert to blob and download
-            canvas.toBlob((blob) => {
+                // Right column
+                ctx.fillRect(630, y, 450, 2);
+                ctx.fillRect(630, y + 8, 430, 2);
+                ctx.fillRect(630, y + 16, 445, 2);
+            }
+
+            return canvas;
+        }
+
+        // Generate images for both people
+        async function generateBothImages(headline1, headline2, personName1, personName2) {
+            // Generate first image
+            const canvas1 = generateNewspaperImage(headline1, personName1);
+            canvas1.toBlob((blob) => {
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `headline-${getTodayDate()}.png`;
+                a.download = `headline-${getTodayDate()}-${personName1}.png`;
                 a.click();
                 URL.revokeObjectURL(url);
             });
+
+            // Small delay before second download
+            setTimeout(() => {
+                const canvas2 = generateNewspaperImage(headline2, personName2);
+                canvas2.toBlob((blob) => {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `headline-${getTodayDate()}-${personName2}.png`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                });
+            }, 500);
         }
 
         // Helper function to wrap text
@@ -471,7 +524,7 @@
             const person2Headline = todaysHeadlines.find(h => h.person === PERSON2_NAME);
 
             if (person1Headline && person2Headline) {
-                generateNewspaperImage(
+                generateBothImages(
                     person1Headline.headline,
                     person2Headline.headline,
                     PERSON1_NAME,
