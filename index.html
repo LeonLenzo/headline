@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daily Headlines</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -361,13 +364,12 @@
             const dateStr = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
             // Masthead - "The Bourke Street Gazette"
+            // Old English/Gothic font
             ctx.fillStyle = '#000000';
-            ctx.font = 'bold 70px "Times New Roman", serif';
+            ctx.font = '72px "UnifrakturMaguntia", Georgia, serif';
             ctx.textAlign = 'center';
 
-            // Gothic/blackletter style - use all caps for dramatic effect
-            ctx.font = 'bold 72px Georgia, serif';
-            ctx.fillText('THE BOURKE STREET GAZETTE', canvas.width / 2, 140);
+            ctx.fillText('The Bourke Street Gazette', canvas.width / 2, 140);
 
             // Top border lines
             ctx.strokeStyle = '#000000';
@@ -429,35 +431,12 @@
             ctx.font = 'italic 24px Georgia, serif';
             ctx.fillText(`By ${personName}`, canvas.width / 2, yPos + 60);
 
-            // Bottom border
-            ctx.lineWidth = 1;
+            // Bottom border (only one separator)
+            ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.moveTo(100, yPos + 100);
             ctx.lineTo(canvas.width - 100, yPos + 100);
             ctx.stroke();
-
-            // Fake article columns (decorative lines to look like text columns)
-            ctx.font = '16px Georgia, serif';
-            ctx.textAlign = 'left';
-            ctx.fillStyle = '#666666';
-
-            const colY = yPos + 140;
-            const colHeight = 20;
-            const colGap = 30;
-
-            // Draw fake article lines (looks like text columns)
-            for (let i = 0; i < 15; i++) {
-                const y = colY + (i * colGap);
-                // Left column
-                ctx.fillRect(120, y, 450, 2);
-                ctx.fillRect(120, y + 8, 420, 2);
-                ctx.fillRect(120, y + 16, 440, 2);
-
-                // Right column
-                ctx.fillRect(630, y, 450, 2);
-                ctx.fillRect(630, y + 8, 430, 2);
-                ctx.fillRect(630, y + 16, 445, 2);
-            }
 
             return canvas;
         }
